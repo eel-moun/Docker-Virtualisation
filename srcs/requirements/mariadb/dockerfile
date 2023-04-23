@@ -1,0 +1,8 @@
+FROM debian:buster
+
+COPY ./tools/script.sh /tmp/dbscript.sh
+
+RUN apt-get update
+RUN apt-get install mariadb-server -y
+
+CMD [ "sh","/tmp/dbscript.sh" ]

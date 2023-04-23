@@ -1,0 +1,13 @@
+FROM debian:buster
+
+RUN apt-get update
+RUN apt-get install -y nginx && apt-get install openssl -y
+RUN openssl req -x509 \
+            -sha256 -days 356 \
+            -nodes \
+            -newkey rsa:2048 \
+            -subj "/CN=eel-moun.1337.ma/C=MA/L=KHOURIBGA" \
+            -keyout /etc/ssl/eel-moun.key -out /etc/ssl/eel-moun.crt
+
+COPY /conf/nginx.conf /etc/nginx/sites-available/default
+CMD nginx -g "daemon off;"

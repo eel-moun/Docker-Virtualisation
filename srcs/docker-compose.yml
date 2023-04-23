@@ -1,0 +1,128 @@
+version: "3"
+
+volumes:
+  database:
+    name: DB
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/eel-moun/data/DB
+      o: bind
+  wp:
+    name: WordPress
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/eel-moun/data/WordPress
+      o: bind
+
+networks:
+  nmw_net:
+    name: nmw
+    
+services:
+  mariadb:
+    build: ./requirements/mariadb/
+    image: mariadb:incept
+    container_name: data_base
+    volumes:
+      - database:/var/lib/mysql
+    networks:
+      - nmw_net
+    env_file:
+      - .env
+    restart: always
+
+  wordpress:
+    build: ./requirements/wordpress/
+    image: wordpress:incept
+    container_name: web_content
+    volumes:
+      - wp:/var/www/html
+    networks:
+      - nmw_net
+    env_file:
+      - .env
+    depends_on:
+      - mariadb
+    restart: always
+
+  nginx:
+    build: ./requirements/nginx/
+    image: nginx:incept
+    container_name: web_srv
+    volumes:
+      - wp:/var/www/html
+    networks:
+      - nmw_net
+    ports:
+      - 443:443
+    depends_on:
+      - wordpress
+    restart: always
+  
+  adminer:
+    build: ./requirements/bonus/adminer/
+    image: adminer:incept
+    networks:
+    - nmw_net
+    ports:
+      - 900:30000
+    depends_on:
+      - redis
+    restart: always
+
+  ftp:
+    build: ./requirements/bonus/ftp/
+    image: ftp:incept
+    networks:
+    - nmw_net
+    ports:
+      - "20:20"
+      - "21:21"
+      - "10000-10100:10000-10100"
+    volumes:
+      - wp:/home/$ftp_user/ftp/upload
+    env_file:
+      - .env
+    depends_on:
+      - adminer
+    restart: always
+    
+  redis:
+    build: ./requirements/bonus/redis/
+    image: redis:incept
+    networks:
+      - nmw_net
+    volumes:
+      - wp:/var/www/html
+    depends_on:
+      - nginx
+    restart: always
+  
+
+  cadvisor:
+    build: ./requirements/bonus/cadvisor/
+    image: cadvisor:incept
+    networks:
+      - nmw_net
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - 8080:8080
+    depends_on:
+      - ftp
+    restart: always
+
+  static:
+    build: ./requirements/bonus/static/
+    image: static:incept
+    networks:
+      - nmw_net
+    ports:
+      - 80:80
+    restart: always
