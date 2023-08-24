@@ -1,4 +1,4 @@
-# Welcome to inception 🐋
+# Welcome
 
 This project is about using **Docker** and **Docker compose** to create a small multi-containers application with a wordpress website, running with php-fmp, nginx and mariadb.
 
